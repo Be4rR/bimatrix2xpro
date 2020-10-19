@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "bimatrix2xpro"
+version = "0.1.0"
+description = ""
+authors = ["bear_montblanc <44293565+Be4rR@users.noreply.github.com>"]
+
+
+[tool.poetry.dependencies]
+python = "^3.8"
+PySimpleGUI = "^4.30.0"
+
+[tool.poetry.dev-dependencies]
+
+[tool.poetry.scripts]
+b2x = "bimatrix2xpro.script:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
