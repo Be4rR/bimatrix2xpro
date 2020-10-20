@@ -6,7 +6,7 @@ authors = ["bear_montblanc <44293565+Be4rR@users.noreply.github.com>"]
 
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.5"
 PySimpleGUI = "^4.30.0"
 
 [tool.poetry.dev-dependencies]
