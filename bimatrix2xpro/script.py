@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 from pathlib import Path
 
-REPLACE_START=""";start script
+START_SCRIPT=""";start script
 G90
 M82
 M106 S0
@@ -24,7 +24,7 @@ G92 E0 ; zero extruder
 G1 X0 Y4 F3600 ; prepare to purge
 G1 X230 E18 F2400 ; purge"""
 
-REPLACE_END = """;end script
+END_SCRIPT = """;end script
 M107 ; turn fan off
 M104 S0 T1 ; cool left extruder
 M104 S0 T0 ; cool right extruder
@@ -34,42 +34,51 @@ G28 X Y ; home XY axes
 M84 ; disable motors"""
 
 def index_startswith(lines, s, rev=False):
+    index = [i for i, line in enumerate(lines) if line.startswith(s)]
     if rev:
-        return [i for i, line in enumerate(lines) if line.startswith(s)][-1]
+        return index[-1]
     else:
-        return [i for i, line in enumerate(lines) if line.startswith(s)][0]
+        return index[0]
 
+def translate(gcode):
+    gcode = Path(gcode)
+    parent = gcode.parent
+    
+    with open(gcode) as f:
+        lines = f.readlines()
+
+    start_index = index_startswith(lines, "G21")
+    end_index = index_startswith(lines, ";skirt") + 1
+    lines[start_index:end_index] = START_SCRIPT.split("\n")
+
+    start_index = index_startswith(lines, "M107", rev=True)
+    end_index = None
+    lines[start_index:end_index] = END_SCRIPT.split("\n")
+    
+    new_gcode = parent / Path(gcode.stem + "-xpro.gcode")
+    with open(new_gcode, "w") as f:
+        for line in lines:
+            f.write(f"{line.strip()}\n")
+    
 def main():
-    if gcode := sg.popup_get_file("Select Gcode File", file_types=(("Gcode Files", "*.gcode"),),):
-        gcode = Path(gcode)
-        parent = gcode.parent
-        
+    filenames = sg.popup_get_file("Select Gcode File", file_types=(("Gcode Files", "*.gcode"),), multiple_files=True)
+    
+    if filenames is None:
+        filenames = []
+    elif isinstance(filenames, str):
+        filenames = filenames.split(";")
+    
+    for gcode in filenames:
         try:
-            with open(gcode) as f:
-                lines = f.readlines()
-        except:
-            print("Can't open file.")
-            
+            translate(gcode)
+        except Exception as e:
+            print(f"Error occured while processing {gcode}")
+            print(f"{e.__class__} {e}")
 
-        start = index_startswith(lines, "G21")
-        end = index_startswith(lines, ";skirt") + 1
-            
-            
+        else:
+            print(f"Successfully translated {gcode}.")
+
         
-        rstart = REPLACE_START.split("\n")
-        rend = REPLACE_END.split("\n")
-        
-        lines[start:end] = rstart
-        
-        end_start = index_startswith(lines, "M107", rev=True)
-        lines[end_start:] = rend
-        
-        new_gcode = parent / Path(gcode.stem + "-xpro.gcode")
-        with open(new_gcode, "w") as f:
-            for line in lines:
-                f.write(f"{line.strip()}\n")
-        
-        sg.popup("Successfully translated!")
         
 if __name__ == "__main__":
     main()
